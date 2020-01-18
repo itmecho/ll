@@ -1,5 +1,5 @@
 use std::fmt;
-use std::os::unix::fs::PermissionsExt;
+use std::os::unix::fs::{MetadataExt, PermissionsExt};
 
 const ROWN: u32 = 0o400;
 const WOWN: u32 = 0o200;
@@ -16,7 +16,10 @@ pub struct Entry {
     name: String,
     hidden: bool,
     dir: bool,
+    owner: String,
+    group: String,
     perms: u32,
+    size: u64,
 }
 
 impl Entry {
@@ -28,12 +31,19 @@ impl Entry {
 
         let metadata = e.metadata().unwrap();
         let dir = metadata.is_dir();
+        let size = metadata.len();
+        let perms = metadata.permissions().mode();
+        let user_id = metadata.uid();
+        let group_id = metadata.gid();
 
         Entry {
-            name: name,
-            hidden: hidden,
-            dir: dir,
-            perms: metadata.permissions().mode(),
+            name,
+            hidden,
+            dir,
+            owner: user_id.to_string(),
+            group: group_id.to_string(),
+            perms,
+            size,
         }
     }
 
@@ -45,9 +55,9 @@ impl Entry {
         self.dir
     }
 
-    pub fn is_hidden(&self) -> bool {
-        self.hidden
-    }
+    // pub fn is_hidden(&self) -> bool {
+    //     self.hidden
+    // }
 
     pub fn perm_string(&self) -> String {
         let mut s = String::new();
@@ -65,12 +75,25 @@ impl Entry {
 
         s
     }
+
+    pub fn human_readible_size(&self) -> String {
+        pretty_bytes::converter::convert(self.size as f64)
+    }
 }
 
 impl std::fmt::Display for Entry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let icon = if self.dir { "" } else { "" };
 
-        write!(f, "{} {} {}", self.perm_string(), icon, self.name)
+        write!(
+            f,
+            "{} {}:{} {:>8} {} {}",
+            self.perm_string(),
+            self.owner,
+            self.group,
+            self.human_readible_size(),
+            icon,
+            self.name,
+        )
     }
 }
