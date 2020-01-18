@@ -69,8 +69,8 @@ impl Entry {
 
 impl std::fmt::Display for Entry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let prefix = if self.dir { "" } else { "" };
+        let icon = if self.dir { "" } else { "" };
 
-        write!(f, "{} ({}) {}", prefix, self.perm_string(), self.name)
+        write!(f, "{} {} {}", self.perm_string(), icon, self.name)
     }
 }
